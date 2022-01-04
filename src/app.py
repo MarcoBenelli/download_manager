@@ -5,37 +5,45 @@ import model
 
 
 class App(ttk.Frame):
-    def __init__(self) -> None:
-        super().__init__()
-        self.pack()
+    def __init__(self, master: tkinter.Tk) -> None:
+        # container
+        super().__init__(master)
+        self.grid(column=0, row=0, sticky=(
+            tkinter.N, tkinter.S, tkinter.E, tkinter.W))
+        master.columnconfigure(0, weight=1)
+        master.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
 
+        # entry
         self._string_var = tkinter.StringVar()
         entry = ttk.Entry(self, textvariable=self._string_var)
-        entry.pack()
+        entry.grid(column=0, row=0, columnspan=2,
+                   sticky=(tkinter.E, tkinter.W))
         entry.bind('<Key-Return>', self._start_download)
 
+        # canvas
         canvas = tkinter.Canvas(self)
-        scrollbar = ttk.Scrollbar(command=canvas.yview)
-        scrollbar_x = ttk.Scrollbar(command=canvas.xview)
+        scrollbar = ttk.Scrollbar(self, command=canvas.yview)
         self._scrollable_frame = ttk.Frame(canvas)
         self._scrollable_frame.bind('<Configure>', lambda e: canvas.configure(
             scrollregion=canvas.bbox(tkinter.ALL)))
         canvas.create_window((0, 0), window=self._scrollable_frame)
         canvas.configure(yscrollcommand=scrollbar.set)
-        canvas.pack()
-        scrollbar.pack()
-        scrollbar_x.pack()
+        canvas.grid(column=0, row=1, sticky=(
+            tkinter.N, tkinter.S, tkinter.E, tkinter.W))
+        scrollbar.grid(column=1, row=1, sticky=(tkinter.N, tkinter.S))
 
     def _start_download(self, event: tkinter.Event) -> None:
         # geometry
-        list_element = ttk.Frame(self._scrollable_frame)
-        ttk.Label(list_element, text=self._string_var.get()
-                  ).grid(column=0, row=0)
-        progressbar = ttk.Progressbar(
-            list_element)
-        progressbar.grid(column=0, row=1)
+        list_element = ttk.Frame(self._scrollable_frame, relief=tkinter.SOLID)
+        entry = ttk.Entry(list_element)
+        entry.insert(0, self._string_var.get())
+        entry.configure(state='readonly')
+        entry.grid(column=0, row=0, sticky=(tkinter.E, tkinter.W))
+        progressbar = ttk.Progressbar(list_element)
+        progressbar.grid(column=0, row=1, sticky=(tkinter.E, tkinter.W))
         list_element.pack()
-        # progressbar.configure(length=list_element['width'])
 
         # menu
         menu = tkinter.Menu(list_element, tearoff=False)

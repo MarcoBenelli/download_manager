@@ -5,5 +5,6 @@ import tkinter
 import app
 
 
-tkinter.Tk().title(os.path.basename(sys.argv[0]))
-app.App().mainloop()
+root = tkinter.Tk()
+root.title(os.path.basename(sys.argv[0]))
+app.App(root).mainloop()
