@@ -7,4 +7,6 @@ import app
 
 root = tkinter.Tk()
 root.title(os.path.basename(sys.argv[0]))
-app.App(root).mainloop()
+root.option_add('*tearOff', tkinter.FALSE)
+app.App(root)
+root.mainloop()
