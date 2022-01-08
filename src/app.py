@@ -1,6 +1,6 @@
 from tkinter import filedialog
+from tkinter import messagebox
 from tkinter import ttk
-import time
 import tkinter
 
 import model
@@ -63,8 +63,13 @@ class App(ttk.Frame):
         progressbar.bind('<3>', lambda e: menu.post(e.x_root, e.y_root))
 
         # submit url
+        list_element.bind('<<Destroy>>', lambda e: list_element.destroy())
+        progressbar.bind('<<Step>>', lambda e: progressbar.step())
         job = model.DownloadJob.create(
-            self._string_var.get(), list_element.destroy, progressbar.step)
+            self._string_var.get(),
+            lambda: list_element.event_generate('<<Destroy>>'),
+            lambda: progressbar.event_generate('<<Step>>'),
+            lambda exc: messagebox.showerror(type(exc), exc))
         self._string_var.set('')
 
         # menu commands
