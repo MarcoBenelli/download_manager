@@ -1,7 +1,10 @@
 from concurrent import futures
 from urllib import request, parse
+import datetime
+import json
 import pathlib
 import os
+import sys
 import threading
 import typing
 
@@ -11,6 +14,9 @@ class DownloadJob:
     _executor = futures.ThreadPoolExecutor()
     _instances = []
     _cancel_all_event = False
+    _file_path = '{}/.{}_history'.format(
+        pathlib.Path.home(),
+        os.path.splitext(os.path.basename(sys.argv[0]))[0])
 
     @staticmethod
     def create(*args, **kwargs) -> None:
@@ -22,6 +28,22 @@ class DownloadJob:
     def delete_all() -> None:
         DownloadJob._cancel_all_event = True
         DownloadJob._executor.shutdown()
+        history = DownloadJob.history()
+        with open(DownloadJob._file_path, 'w') as f:
+            json.dump(history, f)
+
+    @staticmethod
+    def history() -> list[list[str, bool, str, str]]:
+        try:
+            with open(DownloadJob._file_path) as f:
+                history = json.load(f)
+        except (FileNotFoundError, json.decoder.JSONDecodeError):
+            history = []
+        for job in DownloadJob._instances:
+            if job._future.done():
+                history.append([job._url, job._future.result(),
+                                str(job._time_started), str(job._time_completed)])
+        return history
 
     def __init__(self, url: str, done: typing.Callable[[], typing.Any],
                  step: typing.Callable[[], typing.Any],
@@ -34,7 +56,7 @@ class DownloadJob:
         self._cancel_event = False
         self._pause_event = threading.Event()
         self._pause_event.set()
-        DownloadJob._executor.submit(self._urlopen)
+        self._future = DownloadJob._executor.submit(self._urlopen)
 
     def cancel(self) -> None:
         self._cancel_event = True
@@ -46,8 +68,9 @@ class DownloadJob:
         else:
             self._pause_event.set()
 
-    def _urlopen(self) -> None:
+    def _urlopen(self) -> bool:
         print(self._url)
+        self._time_started = datetime.datetime.today()
         try:
             response = request.urlopen(self._url)
         except Exception as exc:
@@ -66,11 +89,15 @@ class DownloadJob:
                     self._step_call = lambda: None
                 while buffer := response.read(length//100):
                     if DownloadJob._cancel_all_event:
-                        return
+                        self._time_completed = datetime.datetime.today()
+                        return False
                     if self._cancel_event:
                         self._done_call()
-                        return
+                        self._time_completed = datetime.datetime.today()
+                        return False
                     self._pause_event.wait()
                     f.write(buffer)
                     self._step_call()
         self._done_call()
+        self._time_completed = datetime.datetime.today()
+        return True

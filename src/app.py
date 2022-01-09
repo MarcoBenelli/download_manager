@@ -3,6 +3,7 @@ from tkinter import messagebox
 from tkinter import ttk
 import tkinter
 
+import history_frame
 import model
 
 
@@ -46,6 +47,9 @@ class App(ttk.Frame):
         menubar.add_cascade(menu=menu_edit, label='Edit')
         menu_edit.add_command(
             label='Change download directory', command=self._change_dir)
+        menu_view = tkinter.Menu(menubar)
+        menubar.add_cascade(menu=menu_view, label='View')
+        menu_view.add_command(label='History', command=self._view_history)
 
     def _start_download(self, event: tkinter.Event) -> None:
         # geometry
@@ -76,11 +80,19 @@ class App(ttk.Frame):
         menu.add_command(label='cancel', command=job.cancel)
         menu.add_command(label='pause/restart', command=job.toggle_pause)
 
-    def _change_dir(self) -> None:
-        if d := filedialog.askdirectory():
-            model.DownloadJob.downloads_dir = d
-
     def _delete_window(self) -> None:
         model.DownloadJob.delete_all()
         print('destroying root')
         self._master.destroy()
+
+    def _change_dir(self) -> None:
+        if d := filedialog.askdirectory():
+            model.DownloadJob.downloads_dir = d
+
+    def _view_history(self) -> None:
+        toplevel = tkinter.Toplevel(self._master)
+        toplevel.columnconfigure(0, weight=1)
+        toplevel.rowconfigure(0, weight=1)
+        frame = history_frame.HistoryFrame(toplevel)
+        frame.grid(column=0, row=0, sticky=(
+            tkinter.N, tkinter.S, tkinter.E, tkinter.W))
