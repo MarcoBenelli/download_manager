@@ -14,7 +14,7 @@ class DownloadJob:
     _executor = futures.ThreadPoolExecutor()
     _instances = []
     _cancel_all_event = False
-    _file_path = '{}/.{}_history'.format(
+    _history_file = '{}/.{}_history'.format(
         pathlib.Path.home(),
         os.path.splitext(os.path.basename(sys.argv[0]))[0])
 
@@ -29,19 +29,19 @@ class DownloadJob:
         DownloadJob._cancel_all_event = True
         DownloadJob._executor.shutdown()
         history = DownloadJob.history()
-        with open(DownloadJob._file_path, 'w') as f:
+        with open(DownloadJob._history_file, 'w') as f:
             json.dump(history, f)
 
     @staticmethod
     def history() -> list[list[str, bool, str, str]]:
         try:
-            with open(DownloadJob._file_path) as f:
+            with open(DownloadJob._history_file) as f:
                 history = json.load(f)
         except (FileNotFoundError, json.decoder.JSONDecodeError):
             history = []
         for job in DownloadJob._instances:
             if job._future.done():
-                history.append([job._url, job._future.result(),
+                history.append([os.path.basename(job._name), job._future.result(),
                                 str(job._time_started), str(job._time_completed)])
         return history
 
@@ -76,28 +76,38 @@ class DownloadJob:
         except Exception as exc:
             self._error_call(exc)
         else:
-            print(os.path.basename(parse.urlparse(response.url).path))
-            with open('{}/{}'.format(
-                    self._dir,
-                    os.path.basename(parse.urlparse(response.url).path)),
-                    'wb') as f:
+            basename = '{}/{}'.format(
+                self._dir, os.path.basename(parse.urlparse(response.url).path))
+            print(basename)
+            i = 0
+            self._name = basename
+            while True:
                 try:
-                    length = int(response.getheader('Content-length'))
-                except TypeError:
-                    print('content length not provided')
-                    length = 100 * 0x1000
-                    self._step_call = lambda: None
-                while buffer := response.read(length//100):
-                    if DownloadJob._cancel_all_event:
-                        self._time_completed = datetime.datetime.today()
-                        return False
-                    if self._cancel_event:
-                        self._done_call()
-                        self._time_completed = datetime.datetime.today()
-                        return False
-                    self._pause_event.wait()
-                    f.write(buffer)
-                    self._step_call()
+                    f = open(self._name, 'xb')
+                except FileExistsError:
+                    i += 1
+                    self._name = f'_{i}'.join(os.path.splitext(basename))
+                    print(self._name)
+                else:
+                    break
+            try:
+                length = int(response.getheader('Content-length'))
+            except TypeError:
+                print('content length not provided')
+                length = 100 * 0x1000
+                self._step_call = lambda: None
+            while buffer := response.read(length//100):
+                if DownloadJob._cancel_all_event:
+                    self._time_completed = datetime.datetime.today()
+                    return False
+                if self._cancel_event:
+                    self._done_call()
+                    self._time_completed = datetime.datetime.today()
+                    return False
+                self._pause_event.wait()
+                f.write(buffer)
+                self._step_call()
+            f.close()
         self._done_call()
         self._time_completed = datetime.datetime.today()
         return True

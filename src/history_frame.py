@@ -8,11 +8,12 @@ class HistoryFrame(ttk.Frame):
     def __init__(self, master):
         super().__init__(master)
 
+        # model
         self._history = model.DownloadJob.history()
         choices = [x[0] for x in self._history]
         choicesvar = tkinter.StringVar(value=choices)
 
-        # self.columnconfigure(0, weight=1)
+        # listbox
         self.columnconfigure(1, weight=1)
         self.rowconfigure(0, weight=1)
         self._listbox = tkinter.Listbox(self, listvariable=choicesvar)
@@ -21,6 +22,7 @@ class HistoryFrame(ttk.Frame):
         self._listbox.bind('<<ListboxSelect>>', lambda e: self._show_stats())
         self._listbox.selection_set(0)
 
+        # labels
         self._completed = tkinter.StringVar()
         tkinter.Label(self, textvariable=self._completed).grid(
             column=1, row=1, sticky=(tkinter.E, tkinter.W))
