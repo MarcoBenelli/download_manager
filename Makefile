@@ -2,7 +2,7 @@ dist/download_manager : src/*.py
 	pyinstaller --onefile src/download_manager.py
 
 requirements.txt : FORCE
-	python -m pip freeze > requirements.txt
+	python -m pip freeze >requirements.txt
 FORCE :
 
 install :

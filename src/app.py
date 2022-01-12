@@ -51,6 +51,8 @@ class App(ttk.Frame):
         menubar.add_cascade(menu=menu_view, label='View')
         menu_view.add_command(label='History', command=self._view_history)
 
+        self._resume_all()
+
     def _start_download(self, event: tkinter.Event) -> None:
         # geometry
         list_element = ttk.Frame(self._scrollable_frame, relief=tkinter.SOLID)
@@ -96,3 +98,37 @@ class App(ttk.Frame):
         frame = history_frame.HistoryFrame(toplevel)
         frame.grid(column=0, row=0, sticky=(
             tkinter.N, tkinter.S, tkinter.E, tkinter.W))
+
+    def _resume_all(self) -> None:
+        incomplete = model.DownloadJob.incomplete_from_file()
+        for record in incomplete:
+            # geometry
+            list_element = ttk.Frame(
+                self._scrollable_frame, relief=tkinter.SOLID)
+            entry = ttk.Entry(list_element)
+            entry.insert(0, record['url'])
+            entry.configure(state='readonly')
+            entry.grid(column=0, row=0, sticky=(tkinter.E, tkinter.W))
+            progressbar = ttk.Progressbar(list_element)
+            progressbar.grid(column=0, row=1, sticky=(tkinter.E, tkinter.W))
+            list_element.pack(expand=True, fill=tkinter.X)
+
+            # menu
+            menu = tkinter.Menu(list_element)
+            progressbar.bind(
+                '<3>', lambda e, m=menu: m.post(e.x_root, e.y_root))
+
+            # submit url
+            list_element.bind('<<Destroy>>',
+                              lambda e, le=list_element: le.destroy())
+            progressbar.bind('<<Step>>', lambda e, p=progressbar: p.step())
+            job = model.DownloadJob.create(
+                record['url'],
+                lambda le=list_element: le.event_generate('<<Destroy>>'),
+                lambda p=progressbar: p.event_generate('<<Step>>'),
+                lambda exc, m=messagebox: m.showerror(type(exc), exc),
+                record['name'])
+
+            # menu commands
+            menu.add_command(label='cancel', command=job.cancel)
+            menu.add_command(label='pause/restart', command=job.toggle_pause)

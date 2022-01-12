@@ -10,7 +10,7 @@ class HistoryFrame(ttk.Frame):
 
         # model
         self._history = model.DownloadJob.history()
-        choices = [x[0] for x in self._history]
+        choices = [x['name'] for x in self._history]
         choicesvar = tkinter.StringVar(value=choices)
 
         # listbox
@@ -39,6 +39,7 @@ class HistoryFrame(ttk.Frame):
         except IndexError:
             pass
         else:
-            self._completed.set('completed' if history_el[1] else 'aborted')
-            self._time_s.set(f'time started: {history_el[2]}')
-            self._time_c.set(f'time completed: {history_el[3]}')
+            self._completed.set(
+                'aborted' if history_el['result'] else 'completed')
+            self._time_s.set(f'time started: {history_el["t_start"]}')
+            self._time_c.set(f'time completed: {history_el["t_complete"]}')
