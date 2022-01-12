@@ -6,7 +6,8 @@ requirements.txt : FORCE
 FORCE :
 
 install :
-	python -m pip install -r requirements.txt
+	python3 -m venv env
+	. env/bin/activate ; python -m pip install -r requirements.txt
 
 clean :
 	rm -rf build dist ./*.spec

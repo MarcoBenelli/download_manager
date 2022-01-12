@@ -124,11 +124,13 @@ class DownloadJob:
                 print('content length not provided')
                 length = 100 * 0x1000
                 self._step_call = lambda: None
+                flags = 'wb'
             else:
                 length = size + remaining
                 for _ in range(100*size//length):
                     self._step_call()
-            with open(self._name, 'ab') as f:
+                flags = 'ab'
+            with open(self._name, flags) as f:
                 while buffer := response.read(length//100):
                     if DownloadJob._cancel_all_event:
                         self._time_completed = datetime.datetime.today()
