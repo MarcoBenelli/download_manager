@@ -25,7 +25,7 @@ class App(ttk.Frame):
         entry = ttk.Entry(self, textvariable=self._string_var)
         entry.grid(column=0, row=0, columnspan=2,
                    sticky=(tkinter.E, tkinter.W))
-        entry.bind('<Key-Return>', self._start_download)
+        entry.bind('<Key-Return>', self._entry_return)
 
         # canvas
         canvas = tkinter.Canvas(self)
@@ -53,11 +53,15 @@ class App(ttk.Frame):
 
         self._resume_all()
 
-    def _start_download(self, event: tkinter.Event) -> None:
+    def _entry_return(self, event: tkinter.Event) -> None:
+        self._start_download(self._string_var.get())
+        self._string_var.set('')
+
+    def _start_download(self, url: str, name: str = '') -> None:
         # geometry
-        list_element = ttk.Frame(self._scrollable_frame, relief=tkinter.SOLID)
+        list_element = ttk.Frame(self._scrollable_frame)
         entry = ttk.Entry(list_element)
-        entry.insert(0, self._string_var.get())
+        entry.insert(0, url)
         entry.configure(state='readonly')
         entry.grid(column=0, row=0, sticky=(tkinter.E, tkinter.W))
         progressbar = ttk.Progressbar(list_element)
@@ -72,11 +76,11 @@ class App(ttk.Frame):
         list_element.bind('<<Destroy>>', lambda e: list_element.destroy())
         progressbar.bind('<<Step>>', lambda e: progressbar.step())
         job = model.DownloadJob.create(
-            self._string_var.get(),
+            url,
             lambda: list_element.event_generate('<<Destroy>>'),
             lambda: progressbar.event_generate('<<Step>>'),
-            lambda exc: messagebox.showerror(type(exc), exc))
-        self._string_var.set('')
+            lambda exc: messagebox.showerror(type(exc), exc),
+            name)
 
         # menu commands
         menu.add_command(label='cancel', command=job.cancel)
@@ -102,33 +106,4 @@ class App(ttk.Frame):
     def _resume_all(self) -> None:
         incomplete = model.DownloadJob.incomplete_from_file()
         for record in incomplete:
-            # geometry
-            list_element = ttk.Frame(
-                self._scrollable_frame, relief=tkinter.SOLID)
-            entry = ttk.Entry(list_element)
-            entry.insert(0, record['url'])
-            entry.configure(state='readonly')
-            entry.grid(column=0, row=0, sticky=(tkinter.E, tkinter.W))
-            progressbar = ttk.Progressbar(list_element)
-            progressbar.grid(column=0, row=1, sticky=(tkinter.E, tkinter.W))
-            list_element.pack(expand=True, fill=tkinter.X)
-
-            # menu
-            menu = tkinter.Menu(list_element)
-            progressbar.bind(
-                '<3>', lambda e, m=menu: m.post(e.x_root, e.y_root))
-
-            # submit url
-            list_element.bind('<<Destroy>>',
-                              lambda e, le=list_element: le.destroy())
-            progressbar.bind('<<Step>>', lambda e, p=progressbar: p.step())
-            job = model.DownloadJob.create(
-                record['url'],
-                lambda le=list_element: le.event_generate('<<Destroy>>'),
-                lambda p=progressbar: p.event_generate('<<Step>>'),
-                lambda exc, m=messagebox: m.showerror(type(exc), exc),
-                record['name'])
-
-            # menu commands
-            menu.add_command(label='cancel', command=job.cancel)
-            menu.add_command(label='pause/restart', command=job.toggle_pause)
+            self._start_download(record['url'], record['name'])
