@@ -2,9 +2,14 @@
 
 A download manager is a software tool that manages the downloading of files from the Internet.
 
+The application is written in pure Python 3, using `tkinter` for the graphical user interface.
+Because of this, there are no dependencies needed if you want to clone the repository and run the application from source.
+The dependencies listed in [`requirements.txt`](requirements.txt) are only needed if you want to build the application using `pyinstaller`.
+
 ## Usage 
 
-Download the file for your operating system from [latest release](https://github.com/MarcoBenelli/download_manager/releases/latest). Alternatively, if you want to build the application on your own, follow the instructions in the [Build](#build) section.
+Download the file the [latest release](https://github.com/MarcoBenelli/download_manager/releases/latest) for your operating system.
+Alternatively, if you want to build the application on your own, follow the instructions in the [Build](#build) section.
 
 ## Requirements
 
@@ -28,7 +33,12 @@ Open `download_manager` project folder:
 cd download_manager
 ```
 
-Create and activate a virtual environment (this step is optional and can be done in many different ways, e. g. you might want to use `conda`).
+To run the application from source:
+```sh
+python download_manager.py
+```
+
+If instead you want to build the executable file, first create and activate a virtual environment (this step is optional and can be done in many different ways, e. g. you might want to use `conda`).
 On Unix-like systems, you could do it like this:
 ```sh
 python3 -m venv env
@@ -45,7 +55,7 @@ Install the dependencies:
 make install
 ```
 
-Build the application, the output will be in `dist`:
+Finally Build the application, the output will be in `dist`:
 ```sh
 make
 ```
