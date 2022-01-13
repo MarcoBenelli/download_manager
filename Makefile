@@ -23,5 +23,6 @@ clean :
 	-rm -R $(rm_option) build
 	-rm -R $(rm_option) dist
 	-rm -R $(rm_option) ./*.spec
+	-rm -R $(rm_option) Output
 
 .PHONY : clean install
